@@ -1,0 +1,350 @@
+/* ============================================================================
+   styles.css — Hyrum HG Wolf · Cosmist & Christian
+   Deep blue-black sky, warm white stars, gold serif accents.
+   ========================================================================== */
+
+:root {
+  --gold: #c9a24b;
+  --gold-bright: #e8c87a;
+  --star-warm: #fdf6e8;
+  --sky-center: #05070f;
+  --sky-edge: #020308;
+  --line: rgba(245, 240, 228, 0.35);
+  --panel-bg: rgba(8, 11, 22, 0.78);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden; /* full-viewport sky, no scrolling on desktop */
+}
+
+body {
+  /* deep blue-black sky (the nebula haze lives in .nebula-field, animated) */
+  background: radial-gradient(ellipse 80% 80% at 50% 45%, var(--sky-center), var(--sky-edge));
+  color: var(--star-warm);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  position: relative;
+}
+
+/* --- Nebula haze: barely-visible clouds breathing on minute-long cycles -- */
+
+.nebula-field {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.nebula {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+  animation: nebula-drift var(--neb-dur) ease-in-out var(--neb-delay) infinite alternate;
+}
+
+.nebula--violet {
+  width: 70vmax; height: 50vmax;
+  left: 45%; top: 5%;
+  background: radial-gradient(closest-side, rgba(96, 70, 160, 0.07), transparent 70%);
+  --neb-dur: 110s; --neb-delay: 0s;
+}
+
+.nebula--teal {
+  width: 65vmax; height: 55vmax;
+  left: -5%; top: 40%;
+  background: radial-gradient(closest-side, rgba(50, 130, 150, 0.06), transparent 70%);
+  --neb-dur: 140s; --neb-delay: -45s;
+}
+
+.nebula--amber {
+  width: 50vmax; height: 45vmax;
+  left: 20%; top: -15%;
+  background: radial-gradient(closest-side, rgba(160, 120, 60, 0.04), transparent 70%);
+  --neb-dur: 170s; --neb-delay: -100s;
+}
+
+/* Drift a few percent of the cloud's own size and swell slightly — at
+   100s+ periods this reads as the sky breathing, not as movement. */
+@keyframes nebula-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-4%, 3%) scale(1.12); }
+}
+
+/* --- Header ------------------------------------------------------------- */
+
+.site-header {
+  position: fixed;
+  top: clamp(14px, 3.5vh, 36px);
+  left: 0; right: 0;
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.name {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3.4vw, 2.6rem);
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 24px rgba(201, 162, 75, 0.35);
+}
+
+.tagline {
+  margin-top: 0.45em;
+  font-size: clamp(0.62rem, 1.1vw, 0.8rem);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(253, 246, 232, 0.85);
+}
+
+/* --- Sky / SVG ---------------------------------------------------------- */
+
+#sky-wrap {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#sky {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Sidereal drift: the whole sky group rotates ~1°/min around a point far
+   above the viewport (set as transform-origin in viewBox units). */
+#sky-rotor {
+  transform-box: view-box;
+  transform-origin: 500px -900px;
+  animation: sidereal 21600s linear infinite;
+}
+@keyframes sidereal {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Constellation lines */
+.edge {
+  stroke: var(--line);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  fill: none;
+}
+
+/* Every star twinkles independently; phase/period are randomized per-star
+   via inline custom properties set in main.js. */
+.star {
+  opacity: var(--base-op, 1);
+  animation: twinkle var(--tw-dur, 4s) ease-in-out var(--tw-delay, 0s) infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: calc(var(--base-op, 1) * 0.55); }
+  to   { opacity: var(--base-op, 1); }
+}
+
+/* Interactive stars: idle pulse affordance (~4s, desynchronized) */
+.star--interactive {
+  cursor: pointer;
+  outline: none;
+}
+.star--interactive .halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse var(--pulse-dur, 4s) ease-in-out var(--pulse-delay, 0s) infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1);    opacity: 0.75; }
+  50%      { transform: scale(1.35); opacity: 1; }
+}
+
+/* Hover / focus: brighten + expand glow */
+.star--interactive:hover .halo,
+.star--interactive:focus-visible .halo,
+.star--interactive.is-active .halo {
+  animation: none;
+  transform: scale(1.7);
+  opacity: 1;
+}
+.star--interactive:hover .core,
+.star--interactive:focus-visible .core,
+.star--interactive.is-active .core {
+  fill: #ffffff;
+}
+
+/* Visible focus ring for keyboard users */
+.star--interactive:focus-visible .hit {
+  stroke: var(--gold-bright);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+/* Selection ring around the active star while the panel is open */
+.selection-ring {
+  fill: none;
+  stroke: var(--gold-bright);
+  stroke-width: 1.5;
+  opacity: 0.9;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ring-in 0.4s ease-out;
+}
+@keyframes ring-in {
+  from { transform: scale(1.6); opacity: 0; }
+  to   { transform: scale(1);   opacity: 0.9; }
+}
+
+/* Dim the rest of the constellation while a panel is open */
+#sky.is-dimmed .star:not(.is-active) { opacity: calc(var(--base-op, 1) * 0.45); }
+#sky.is-dimmed .edge { opacity: 0.5; }
+
+/* Shooting stars */
+.shooting-star {
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+/* --- Hover label (star-chart annotation) -------------------------------- */
+
+.star-label {
+  position: fixed;
+  z-index: 6;
+  pointer-events: none;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  /* Caps are applied in JS so the Greek letter keeps its lowercase form */
+  color: var(--gold-bright);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.star-label.is-visible { opacity: 1; }
+
+/* --- Detail panel -------------------------------------------------------- */
+
+.panel {
+  position: fixed;
+  top: 0; right: 0;
+  height: 100%;
+  width: min(380px, 90vw);
+  z-index: 10;
+  padding: 4.5rem 2.2rem 2.2rem;
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--gold);
+  border-left: 1px solid rgba(201, 162, 75, 0.18);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.55);
+  transform: translateX(105%);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.panel.is-open { transform: translateX(0); }
+
+.panel-close {
+  position: absolute;
+  top: 1rem; right: 1.2rem;
+  background: none;
+  border: none;
+  color: rgba(253, 246, 232, 0.7);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+}
+.panel-close:hover, .panel-close:focus-visible { color: var(--gold-bright); }
+.panel-close:focus-visible { outline: 1px solid var(--gold-bright); outline-offset: 2px; }
+
+.panel-designation {
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  margin-bottom: 0.9rem;
+}
+
+.panel-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 500;
+  font-size: 1.45rem;
+  color: var(--star-warm);
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+.panel-body {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: rgba(253, 246, 232, 0.82);
+}
+
+.panel-link {
+  display: inline-block;
+  margin-top: 1.4rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(201, 162, 75, 0.4);
+  padding-bottom: 2px;
+}
+.panel-link:hover, .panel-link:focus-visible { border-bottom-color: var(--gold-bright); }
+
+/* --- Hint footer ---------------------------------------------------------- */
+
+.hint {
+  position: fixed;
+  bottom: 18px;
+  right: 24px;
+  z-index: 5;
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(253, 246, 232, 0.5);
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+}
+.hint.is-hidden { opacity: 0; }
+
+/* --- Mobile: bottom sheet, smaller text ----------------------------------- */
+
+@media (max-width: 640px) {
+  .panel {
+    top: auto;
+    bottom: 0;
+    left: 0; right: 0;
+    width: 100%;
+    height: auto;
+    max-height: 62vh;
+    overflow-y: auto;
+    padding: 3.2rem 1.6rem 2rem;
+    border-left: none;
+    transform: translateY(105%);
+    border-radius: 14px 14px 0 0;
+  }
+  .panel.is-open { transform: translateY(0); }
+
+  .hint { right: 0; left: 0; text-align: center; }
+}
+
+/* --- Reduced motion -------------------------------------------------------- */
+
+/* The .reduce-motion class is set on <html> by main.js when the OS prefers
+   reduced motion (overridable with "?motion" in the URL for testing). */
+html.reduce-motion #sky-rotor { animation: none; }
+html.reduce-motion .nebula { animation: none; }
+html.reduce-motion .star {
+  /* keep only a faint, slow opacity shimmer */
+  animation-name: twinkle-soft;
+  animation-duration: 8s;
+}
+@keyframes twinkle-soft {
+  from { opacity: calc(var(--base-op, 1) * 0.85); }
+  to   { opacity: var(--base-op, 1); }
+}
+html.reduce-motion .star--interactive .halo { animation: none; }
+html.reduce-motion .panel { transition: none; }

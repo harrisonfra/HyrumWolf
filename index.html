@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyrum HG Wolf — Cosmist &amp; Christian</title>
+  <meta name="description" content="The personal constellation of Hyrum HG Wolf — Cosmist &amp; Christian.">
+
+  <!-- Star favicon (inline SVG, no external asset) -->
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 L18.5 13.5 L30 16 L18.5 18.5 L16 30 L13.5 18.5 L2 16 L13.5 13.5 Z' fill='%23c9a24b'/%3E%3C/svg%3E">
+
+  <!-- Google Fonts: gold serif header + small-caps body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Header, top center -->
+  <header class="site-header">
+    <h1 class="name">Hyrum HG Wolf</h1>
+    <p class="tagline">Cosmist &amp; Christian</p>
+  </header>
+
+  <!-- Nebula haze: large soft gradients drifting very slowly behind the stars -->
+  <div class="nebula-field" aria-hidden="true">
+    <span class="nebula nebula--violet"></span>
+    <span class="nebula nebula--teal"></span>
+    <span class="nebula nebula--amber"></span>
+  </div>
+
+  <!-- The sky: background starfield layers + constellation are built by
+       main.js inside this SVG so every star is a real DOM node. -->
+  <main id="sky-wrap" aria-label="Interactive constellation of Captain Moroni planting the Title of Liberty">
+    <svg id="sky" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet"
+         xmlns="http://www.w3.org/2000/svg" aria-hidden="false"></svg>
+  </main>
+
+  <!-- Hover annotation (e.g. “α Moronis · Core Identity”) -->
+  <div id="star-label" class="star-label" aria-hidden="true"></div>
+
+  <!-- Detail panel (side panel on desktop, bottom sheet on mobile) -->
+  <aside id="panel" class="panel" role="dialog" aria-modal="true"
+         aria-labelledby="panel-title" hidden>
+    <button id="panel-close" class="panel-close" aria-label="Close panel">&times;</button>
+    <p id="panel-designation" class="panel-designation"></p>
+    <h2 id="panel-title" class="panel-title"></h2>
+    <p id="panel-body" class="panel-body"></p>
+    <a id="panel-link" class="panel-link" href="#" hidden></a>
+  </aside>
+
+  <!-- Hint, bottom corner; fades out permanently after the first click -->
+  <footer id="hint" class="hint">✦ Brighter stars hold stories — click one</footer>
+
+  <script src="data.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
