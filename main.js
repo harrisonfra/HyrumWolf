@@ -3,21 +3,20 @@
    Reads STAR_CONTENT / FIGURE_STARS / FIGURE_EDGES / SOCIAL_LINKS / BIRTH_ISO
    from data.js.
 
-   Layout of the moving parts:
-     #bg-sky   full-viewport starfield (pixel coords) — parallaxes, never
-               letterboxes, always full. Holds the shooting stars too.
-     #sky      the constellation (viewBox units) — ANCHORED. It never drifts
-               or rotates; its life comes from twinkle, a gentle flag wave,
-               and per-star spring nudges on hover / drag.
-     #fx       overlay (pixel coords) — cursor comet trail + stardust burst.
+   Layers:
+     #bg-sky  full-viewport starfield (pixel coords) — parallaxes, never
+              letterboxes, always full. Holds the shooting stars.
+     #sky     the constellation (viewBox units) — ANCHORED. It never drifts or
+              rotates; its life comes from twinkle, a gentle flag wave, and
+              drag-to-spring on individual stars. Bigger viewBox crop on mobile.
+     #fx      overlay (pixel coords) — cursor comet (tail trails the motion) +
+              stardust burst.
    ========================================================================== */
 
 (function () {
   "use strict";
 
   const SVG_NS = "http://www.w3.org/2000/svg";
-  const VIEW_W = 1000;
-  const VIEW_H = 700;
 
   const bgSky = document.getElementById("bg-sky");
   const sky = document.getElementById("sky");
@@ -27,13 +26,13 @@
   const panelClose = document.getElementById("panel-close");
   const panelDesignation = document.getElementById("panel-designation");
   const panelTitle = document.getElementById("panel-title");
+  const panelMeta = document.getElementById("panel-meta");
   const panelBody = document.getElementById("panel-body");
   const panelLink = document.getElementById("panel-link");
   const hint = document.getElementById("hint");
   const eternityEl = document.getElementById("eternity");
   const socialEl = document.getElementById("social");
 
-  // Honor the OS reduced-motion preference; append "?motion" to override it.
   const forceMotion = new URLSearchParams(location.search).has("motion");
   const reduceMotion =
     window.matchMedia("(prefers-reduced-motion: reduce)").matches && !forceMotion;
@@ -43,10 +42,6 @@
   const rand = (a, b) => a + Math.random() * (b - a);
   const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 
-  // "α Moronis" → "α MORONIS · LABEL" (Latin only; keep the Greek lowercase)
-  const caps = (d, l) =>
-    d.charAt(0) + d.slice(1).toUpperCase() + " · " + l.toUpperCase();
-
   function el(name, attrs, parent) {
     const node = document.createElementNS(SVG_NS, name);
     for (const k in attrs) node.setAttribute(k, attrs[k]);
@@ -54,53 +49,53 @@
     return node;
   }
 
+  /* ---------------------------------------------------------- color & size
+     Three star colors by section (lines always stay electric blue); four
+     size tiers map to core radius / brightness. */
+  const SECTION = {
+    motivations: { glow: "url(#glow-gold)",   core: "#f3dda6", label: "#ecd9a4" },
+    iic:         { glow: "url(#glow-blue)",   core: "#dcebff", label: "#bcd6ff" },
+    background:  { glow: "url(#glow-silver)", core: "#eef3fb", label: "#dde6f2" }
+  };
+  const SIZE_R = { largest: 7, large: 5.5, medium: 4.3, small: 3.4 };
+
   /* ------------------------------------------------------------------ defs */
 
   const defs = el("defs", {}, sky);
+  function gradient(id, c0, c1, c2) {
+    const g = el("radialGradient", { id }, defs);
+    el("stop", { offset: "0%",  "stop-color": c0, "stop-opacity": "1" }, g);
+    el("stop", { offset: "32%", "stop-color": c1, "stop-opacity": "0.5" }, g);
+    el("stop", { offset: "100%","stop-color": c2, "stop-opacity": "0" }, g);
+    return g;
+  }
+  gradient("glow-fig",    "#dcebff", "#5e93e6", "#3a6bc4"); // decorative blue
+  gradient("glow-blue",   "#ffffff", "#8fc0ff", "#5e93e6"); // IIC
+  gradient("glow-gold",   "#fff6df", "#e9c878", "#caa24b"); // Motivations
+  gradient("glow-silver", "#ffffff", "#d4e2f5", "#aebfd6"); // Background
 
-  // Cool blue glow for ordinary figure stars (tight falloff = sharp/magical)
-  const glowFig = el("radialGradient", { id: "glow-fig" }, defs);
-  el("stop", { offset: "0%",  "stop-color": "#dcebff", "stop-opacity": "0.95" }, glowFig);
-  el("stop", { offset: "32%", "stop-color": "#5e93e6", "stop-opacity": "0.40" }, glowFig);
-  el("stop", { offset: "100%","stop-color": "#3a6bc4", "stop-opacity": "0" }, glowFig);
-
-  // Brighter glow for interactive stars
-  const glowHot = el("radialGradient", { id: "glow-hot" }, defs);
-  el("stop", { offset: "0%",  "stop-color": "#ffffff", "stop-opacity": "1" }, glowHot);
-  el("stop", { offset: "30%", "stop-color": "#8fc0ff", "stop-opacity": "0.6" }, glowHot);
-  el("stop", { offset: "100%","stop-color": "#5e93e6", "stop-opacity": "0" }, glowHot);
-
-  // Soft round gradient for cursor-trail / stardust particles (in #fx)
   const fxDefs = el("defs", {}, fx);
   const dust = el("radialGradient", { id: "dust" }, fxDefs);
   el("stop", { offset: "0%",  "stop-color": "#ffffff", "stop-opacity": "0.95" }, dust);
   el("stop", { offset: "45%", "stop-color": "#bcd6ff", "stop-opacity": "0.6" }, dust);
   el("stop", { offset: "100%","stop-color": "#7fb0ff", "stop-opacity": "0" }, dust);
 
-  /* ---------------------------------------------- background starfield (#bg-sky)
-     Generated in viewport pixels across an oversized field so parallax never
-     exposes an empty edge, and so the area above/below the figure on tall
-     phones is full of stars rather than dead space. Repopulated on resize. */
+  /* -------------------------------------------------- background starfield */
 
   const COOL_TINTS = ["#eef4ff", "#eef4ff", "#dfe9ff", "#cfe0ff", "#ffe9cf"];
   const bgLayers = [
-    el("g", { class: "bg-layer", "data-depth": "0.25" }, bgSky), // deep, slow, faint
+    el("g", { class: "bg-layer", "data-depth": "0.25" }, bgSky),
     el("g", { class: "bg-layer", "data-depth": "0.55" }, bgSky),
-    el("g", { class: "bg-layer", "data-depth": "1" }, bgSky)     // near, fastest
+    el("g", { class: "bg-layer", "data-depth": "1" }, bgSky)
   ];
   const meteorGroup = el("g", { id: "meteors" }, bgSky);
-
-  // stars per 10k px² per layer → a dense field that scales with screen size
-  // and never leaves dead space (deepest layer is densest + faintest)
-  const LAYER_DENSITY = [2.2, 1.5, 1.0];
+  const LAYER_DENSITY = [2.2, 1.5, 1.0]; // stars per 10k px²
 
   function populateBackground() {
-    const W = window.innerWidth, H = window.innerHeight;
-    const M = 140; // margin beyond the viewport for parallax headroom
+    const W = window.innerWidth, H = window.innerHeight, M = 140;
     bgLayers.forEach((layer, i) => {
       layer.textContent = "";
-      const area = (W + 2 * M) * (H + 2 * M);
-      const count = Math.round((area / 10000) * LAYER_DENSITY[i]);
+      const count = Math.round(((W + 2 * M) * (H + 2 * M) / 10000) * LAYER_DENSITY[i]);
       for (let n = 0; n < count; n++) {
         const c = el("circle", {
           class: "star",
@@ -117,10 +112,7 @@
   }
   populateBackground();
 
-  /* ----------------------------------------------------- constellation (#sky)
-     Build edges first (so stars paint on top), then stars. Each star is a
-     <g> we can transform for spring nudges; we keep a list of which line
-     endpoints to drag along with it so lines stay attached. */
+  /* --------------------------------------------------------- constellation */
 
   const constellation = el("g", { id: "constellation" }, sky);
   const edgeGroup = el("g", { id: "edges" }, constellation);
@@ -128,10 +120,15 @@
 
   const starById = {};
   FIGURE_STARS.forEach((s) => { starById[s.id] = s; });
+  const contentById = {};
+  STAR_CONTENT.forEach((c) => { contentById[c.id] = c; });
+  // content id → the figure star that hosts it (for connectsTo line lookups)
+  const contentToStar = {};
+  FIGURE_STARS.forEach((s) => { if (s.content) contentToStar[s.content] = s.id; });
 
-  // state per star + which line endpoints follow it
-  const state = {};          // id → spring/wave state + element refs
-  const linesOf = {};        // id → [{ line, xAttr, yAttr }]
+  const state = {};
+  const linesOf = {};
+  const edgeIndex = {}; // "a|b" → line element (both directions)
   FIGURE_STARS.forEach((s) => { linesOf[s.id] = []; });
 
   FIGURE_EDGES.forEach(([a, b]) => {
@@ -140,28 +137,28 @@
     const line = el("line", { class: "edge", x1: sa.x, y1: sa.y, x2: sb.x, y2: sb.y }, edgeGroup);
     linesOf[a].push({ line, xAttr: "x1", yAttr: "y1" });
     linesOf[b].push({ line, xAttr: "x2", yAttr: "y2" });
+    edgeIndex[a + "|" + b] = line;
+    edgeIndex[b + "|" + a] = line;
   });
 
-  // Flag-wave: banner cloth stars sway gently, weighted by distance from the
-  // pole (x≈474) so the free edge moves most and the pole edge barely at all.
+  // Flag-wave: banner cloth stars sway, weighted by distance from the pole.
   const BANNER_IDS = new Set([
     "s1","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11","s12","s14","s16",
     "s17","s18","s20","s23","s24","s25","s28","s36","s38","s40","s42","s44","s47","s49"
   ]);
   const POLE_X = 474, BANNER_FAR = 806;
 
-  const contentById = {};
-  STAR_CONTENT.forEach((c) => { contentById[c.id] = c; });
-
-  // Render order: decorative stars first, interactive last (so they sit on top
-  // and so STAR_CONTENT order = keyboard tab order).
   const decorative = FIGURE_STARS.filter((s) => !s.content);
   const interactive = STAR_CONTENT
     .map((c) => FIGURE_STARS.find((s) => s.content === c.id))
     .filter(Boolean);
 
   function buildStar(s) {
-    const isHot = !!s.content;
+    const content = s.content ? contentById[s.content] : null;
+    const isHot = !!content;
+    const sect = isHot ? SECTION[content.section] : null;
+    const coreR = isHot ? (SIZE_R[content.size] || 4) : s.r;
+
     const g = el("g", {
       class: "star" + (isHot ? " star--interactive" : ""),
       "data-id": s.id
@@ -172,52 +169,33 @@
 
     el("circle", {
       class: "halo", cx: s.x, cy: s.y,
-      r: (s.r * (isHot ? 3.0 : 2.4)).toFixed(1),
-      fill: isHot ? "url(#glow-hot)" : "url(#glow-fig)"
+      r: (coreR * (isHot ? 3 : 2.4)).toFixed(1),
+      fill: isHot ? sect.glow : "url(#glow-fig)"
     }, g);
-    el("circle", { class: "core", cx: s.x, cy: s.y, r: s.r, fill: "#dcebff" }, g);
-    // invisible hit target — generous on interactive stars, modest elsewhere
-    el("circle", {
-      class: "hit", cx: s.x, cy: s.y, r: isHot ? 20 : 11,
-      fill: "transparent"
-    }, g);
+    el("circle", { class: "core", cx: s.x, cy: s.y, r: coreR, fill: isHot ? sect.core : "#dcebff" }, g);
+    el("circle", { class: "hit", cx: s.x, cy: s.y, r: isHot ? Math.max(20, coreR + 14) : 11, fill: "transparent" }, g);
 
-    // wave weight (0 for non-banner; up to 1 at the banner's free edge)
-    const waveW = BANNER_IDS.has(s.id)
-      ? clamp((s.x - POLE_X) / (BANNER_FAR - POLE_X), 0, 1)
-      : 0;
-
-    state[s.id] = {
-      bx: s.x, by: s.y, dx: 0, dy: 0, vx: 0, vy: 0,
-      g, lines: linesOf[s.id], waveW, dragging: false
-    };
+    const waveW = BANNER_IDS.has(s.id) ? clamp((s.x - POLE_X) / (BANNER_FAR - POLE_X), 0, 1) : 0;
+    state[s.id] = { bx: s.x, by: s.y, dx: 0, dy: 0, vx: 0, vy: 0, g, lines: linesOf[s.id], waveW, dragging: false };
     return g;
   }
 
   decorative.forEach(buildStar);
   interactive.forEach(buildStar);
 
-  /* ------------------------------------------------------- spring + wave loop
-     One rAF drives: background parallax, the flag wave, and any stars that are
-     currently displaced (hover nudge / drag / settling). A star is "active"
-     while it has a wave, is dragging, or hasn't settled back to rest. */
+  /* ----------------------------------------------------- spring + wave loop */
 
   const active = new Set();
-  // banner stars wave forever
   if (!reduceMotion) Object.keys(state).forEach((id) => { if (state[id].waveW) active.add(id); });
 
-  const K = 0.16;     // spring stiffness toward rest (0,0)
-  const DAMP = 0.82;  // velocity damping
-  const W_AMP = 3.0;  // flag wave amplitude (viewBox units) at the free edge
-  const W_FREQ = 0.7; // flag wave speed
+  const K = 0.16, DAMP = 0.82, W_AMP = 3.0, W_FREQ = 0.7;
 
   function renderStar(id, t) {
     const st = state[id];
     if (!st.dragging) {
       st.vx = (st.vx + (0 - st.dx) * K) * DAMP;
       st.vy = (st.vy + (0 - st.dy) * K) * DAMP;
-      st.dx += st.vx;
-      st.dy += st.vy;
+      st.dx += st.vx; st.dy += st.vy;
     }
     let wx = 0, wy = 0;
     if (st.waveW && !reduceMotion) {
@@ -230,7 +208,6 @@
       L.line.setAttribute(L.xAttr, (st.bx + ox).toFixed(2));
       L.line.setAttribute(L.yAttr, (st.by + oy).toFixed(2));
     }
-    // retire fully-settled, non-waving, non-dragged stars
     const settled = !st.dragging && !st.waveW &&
       Math.abs(st.vx) < 0.01 && Math.abs(st.vy) < 0.01 &&
       Math.abs(st.dx) < 0.04 && Math.abs(st.dy) < 0.04;
@@ -245,8 +222,6 @@
     }
   }
 
-  // Background parallax: eased toward the mouse, plus a slow autonomous wander
-  // so the sky is never perfectly still. Disabled under reduced motion.
   const PARALLAX = 14, AMBIENT = 6;
   let tgtX = 0, tgtY = 0, curX = 0, curY = 0;
   const t0 = performance.now();
@@ -256,12 +231,10 @@
     if (!reduceMotion) {
       curX += (tgtX - curX) * 0.05;
       curY += (tgtY - curY) * 0.05;
-      const ax = Math.sin(t * 0.05) * AMBIENT;
-      const ay = Math.cos(t * 0.037) * AMBIENT * 0.7;
+      const ax = Math.sin(t * 0.05) * AMBIENT, ay = Math.cos(t * 0.037) * AMBIENT * 0.7;
       for (const layer of bgLayers) {
         const d = parseFloat(layer.dataset.depth);
-        layer.setAttribute("transform",
-          `translate(${((curX + ax) * d).toFixed(2)} ${((curY + ay) * d).toFixed(2)})`);
+        layer.setAttribute("transform", `translate(${((curX + ax) * d).toFixed(2)} ${((curY + ay) * d).toFixed(2)})`);
       }
     }
     if (active.size) active.forEach((id) => renderStar(id, t));
@@ -269,45 +242,25 @@
   }
   requestAnimationFrame(frame);
 
-  /* ----------------------------------------------------------- star pointer FX
-     Hover gives a star a little outward kick that springs back. Press-drag
-     lets you pull a star and release it to snap home. A press that doesn't
-     move (a tap/click) opens the panel for interactive stars. */
+  /* ------------------------------------------------- drag (no hover jiggle)
+     Hover no longer nudges the star — only the connecting-line glow + label.
+     Press-drag pulls a star and it springs home on release; a press that
+     doesn't move opens the panel. */
 
   const scale = () => (sky.getScreenCTM() ? sky.getScreenCTM().a : 1);
-
-  function kick(id, fromClientX, fromClientY) {
-    if (reduceMotion) return;
-    const st = state[id];
-    const ctm = sky.getScreenCTM(); if (!ctm) return;
-    const sx = ctm.a * st.bx + ctm.e, sy = ctm.d * st.by + ctm.f;
-    let dx = sx - fromClientX, dy = sy - fromClientY;
-    const m = Math.hypot(dx, dy) || 1;
-    const impulse = 2.6; // velocity in viewBox units/frame → ~8px peak nudge
-    st.vx += (dx / m) * impulse;
-    st.vy += (dy / m) * impulse;
-    active.add(id);
-  }
-
   let dragId = null, dragStart = null, dragMoved = false, dragDownAt = 0;
 
   function onStarDown(e, id, content) {
     const st = state[id];
     e.preventDefault();
     try { st.g.setPointerCapture(e.pointerId); } catch (_) {}
-    dragId = id;
-    dragMoved = false;
-    dragDownAt = performance.now();
+    dragId = id; dragMoved = false; dragDownAt = performance.now();
     dragStart = { x: e.clientX, y: e.clientY, dx: st.dx, dy: st.dy };
-    st.dragging = true;
-    active.add(id);
-    st._content = content;
+    st.dragging = true; active.add(id); st._content = content;
   }
-
   function onStarMove(e) {
     if (dragId === null) return;
-    const st = state[dragId];
-    const s = scale() || 1;
+    const st = state[dragId], s = scale() || 1;
     let ndx = dragStart.dx + (e.clientX - dragStart.x) / s;
     let ndy = dragStart.dy + (e.clientY - dragStart.y) / s;
     const m = Math.hypot(ndx, ndy), MAX = 48;
@@ -315,22 +268,27 @@
     st.dx = ndx; st.dy = ndy; st.vx = 0; st.vy = 0;
     if (Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) > 4) dragMoved = true;
   }
-
   function onStarUp(e) {
     if (dragId === null) return;
-    const st = state[dragId];
-    const id = dragId, content = st._content;
+    const st = state[dragId], id = dragId, content = st._content;
     try { st.g.releasePointerCapture(e.pointerId); } catch (_) {}
-    st.dragging = false;
-    active.add(id); // let it spring home
-    dragId = null;
-    // A short press that didn't move = a click → open the panel.
+    st.dragging = false; active.add(id); dragId = null;
     if (!dragMoved && content && performance.now() - dragDownAt < 600) {
       openPanel(st.g, starById[id], content);
     }
   }
 
-  // wire pointer handlers on every figure star
+  // Glow the constellation line(s) between a star and its related stars.
+  function glowConnections(content, on) {
+    if (!content || !content.connectsTo) return;
+    const from = contentToStar[content.id];
+    content.connectsTo.forEach((otherId) => {
+      const to = contentToStar[otherId];
+      const line = edgeIndex[from + "|" + to];
+      if (line) line.classList.toggle("edge--glow", on);
+    });
+  }
+
   FIGURE_STARS.forEach((s) => {
     const st = state[s.id]; if (!st) return;
     const content = s.content ? contentById[s.content] : null;
@@ -338,21 +296,21 @@
     st.g.addEventListener("pointermove", onStarMove);
     st.g.addEventListener("pointerup", onStarUp);
     st.g.addEventListener("pointercancel", onStarUp);
-    if (hasFinePointer) {
-      st.g.addEventListener("pointerenter", (e) => {
-        if (dragId === null) kick(s.id, e.clientX, e.clientY);
-        if (content && (!activeStar || activeStar.el !== st.g)) showLabel(st.g, content);
+    if (content && hasFinePointer) {
+      st.g.addEventListener("pointerenter", () => {
+        if (!activeStar || activeStar.el !== st.g) showLabel(st.g, content);
+        glowConnections(content, true);
       });
-      st.g.addEventListener("pointerleave", hideLabel);
+      st.g.addEventListener("pointerleave", () => { hideLabel(); glowConnections(content, false); });
     }
     if (content) {
       st.g.setAttribute("role", "button");
       st.g.setAttribute("tabindex", "0");
-      st.g.setAttribute("aria-label", content.designation + " — " + content.label);
+      st.g.setAttribute("aria-label", content.name + " — " + content.subtitle);
       st.g.style.setProperty("--pulse-dur", rand(5.5, 7).toFixed(2) + "s");
       st.g.style.setProperty("--pulse-delay", (-rand(0, 6)).toFixed(2) + "s");
-      st.g.addEventListener("focus", () => showLabel(st.g, content));
-      st.g.addEventListener("blur", hideLabel);
+      st.g.addEventListener("focus", () => { showLabel(st.g, content); glowConnections(content, true); });
+      st.g.addEventListener("blur", () => { hideLabel(); glowConnections(content, false); });
       st.g.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPanel(st.g, s, content); }
       });
@@ -363,9 +321,12 @@
 
   let activeStar = null, lastFocused = null, hintGone = false;
 
+  function labelText(content) { return content.name.toUpperCase() + " · " + content.subtitle; }
+
   function showLabel(g, content) {
     const rect = g.querySelector(".core").getBoundingClientRect();
-    labelEl.textContent = caps(content.designation, content.label);
+    labelEl.textContent = labelText(content);
+    labelEl.style.color = SECTION[content.section].label;
     labelEl.classList.add("is-visible");
     labelEl.style.left = "0px"; labelEl.style.top = "0px";
     const lw = labelEl.offsetWidth;
@@ -378,20 +339,22 @@
 
   function openPanel(g, figureStar, content) {
     closePanel(false);
-    panelDesignation.textContent = caps(content.designation, content.label);
-    panelTitle.textContent = content.title;
+    panelDesignation.textContent = content.subtitle;
+    panelDesignation.style.color = SECTION[content.section].label;
+    panelTitle.textContent = content.name;
+    panelMeta.textContent = content.meta || "";
     panelBody.textContent = content.body;
     if (content.link) {
       panelLink.textContent = content.link.text;
       panelLink.href = content.link.url;
+      panelLink.target = content.link.url.startsWith("http") ? "_blank" : "";
+      panelLink.rel = "noopener";
       panelLink.hidden = false;
     } else {
       panelLink.hidden = true;
     }
     panel.hidden = false;
     requestAnimationFrame(() => panel.classList.add("is-open"));
-
-    // dim the sky and brighten the active star — no ring (item 10)
     sky.classList.add("is-dimmed");
     g.classList.add("is-active");
     activeStar = { el: g, content };
@@ -400,12 +363,10 @@
     panelClose.focus();
     blowAwayHint();
   }
-
   function closePanel(restoreFocus = true) {
     if (!activeStar) return;
     panel.classList.remove("is-open");
-    panel.addEventListener("transitionend",
-      () => { if (!activeStar) panel.hidden = true; }, { once: true });
+    panel.addEventListener("transitionend", () => { if (!activeStar) panel.hidden = true; }, { once: true });
     sky.classList.remove("is-dimmed");
     activeStar.el.classList.remove("is-active");
     if (restoreFocus && lastFocused) lastFocused.focus();
@@ -415,79 +376,69 @@
 
   panelClose.addEventListener("click", () => closePanel());
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
-  sky.addEventListener("click", (e) => {
-    // click on empty sky closes; clicks on a star are handled by pointerup
-    if (!e.target.closest(".star")) closePanel();
-  });
+  sky.addEventListener("click", (e) => { if (!e.target.closest(".star")) closePanel(); });
 
-  /* --------------------------------------------------- big hint → stardust
-     Positioned just under the figure (measured from the pole-base star), the
-     hint bursts into drifting stardust the first time a star is opened. */
+  /* --------------------------------------------------- big hint → stardust */
 
   function positionHint() {
+    if (!hint || hintGone) return;
     const base = sky.querySelector('[data-id="s78"] .core');
     if (!base) return;
     const r = base.getBoundingClientRect();
     hint.style.top = Math.min(r.bottom + 30, window.innerHeight - 120) + "px";
   }
-
   function blowAwayHint() {
-    if (hintGone) return;
+    if (hintGone || !hint) return;
     hintGone = true;
     if (!reduceMotion) {
       const r = hint.getBoundingClientRect();
-      const n = 56;
-      for (let i = 0; i < n; i++) {
-        const px = rand(r.left, r.right), py = rand(r.top, r.bottom);
-        const p = el("circle", { cx: px, cy: py, r: rand(1.2, 3).toFixed(2), fill: "url(#dust)" }, fx);
+      for (let i = 0; i < 56; i++) {
+        const p = el("circle", { cx: rand(r.left, r.right), cy: rand(r.top, r.bottom), r: rand(1.2, 3).toFixed(2), fill: "url(#dust)" }, fx);
         const ang = rand(0, Math.PI * 2), dist = rand(20, 120);
         p.animate(
-          [
-            { transform: "translate(0,0)", opacity: 1 },
-            { transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist - 20}px)`, opacity: 0 }
-          ],
+          [{ transform: "translate(0,0)", opacity: 1 },
+           { transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist - 20}px)`, opacity: 0 }],
           { duration: rand(700, 1300), easing: "cubic-bezier(0.2,0.7,0.3,1)" }
         ).onfinish = () => p.remove();
       }
     }
     hint.classList.add("is-gone");
-    setTimeout(() => hint.remove(), 600);
+    setTimeout(() => { if (hint) hint.remove(); }, 600);
   }
 
-  /* ----------------------------------------------------- cursor comet (#fx)
-     A soft head follows the cursor, shedding a short, fading trail. Fine
-     pointers only; off under reduced motion. */
+  /* ------------------------------------------------------ cursor comet (#fx)
+     The tail trails BEHIND the cursor along the path it just came from, and
+     each segment's length is how far the cursor moved that step (longer when
+     faster). Fine pointers only; off under reduced motion. */
 
   if (hasFinePointer && !reduceMotion) {
-    const head = el("circle", { r: 4, fill: "url(#dust)", opacity: "0" }, fx);
-    let lastTrail = 0, idleHide;
+    const head = el("circle", { class: "comet-head", r: 5, fill: "url(#dust)", opacity: "0" }, fx);
+    let lx = null, ly = null, idleHide;
     window.addEventListener("pointermove", (e) => {
-      head.setAttribute("cx", e.clientX);
-      head.setAttribute("cy", e.clientY);
-      head.setAttribute("opacity", "0.9");
+      const x = e.clientX, y = e.clientY;
+      head.setAttribute("cx", x); head.setAttribute("cy", y); head.setAttribute("opacity", "0.85");
       clearTimeout(idleHide);
-      idleHide = setTimeout(() => head.setAttribute("opacity", "0"), 300);
-      const now = performance.now();
-      if (now - lastTrail > 22) {
-        lastTrail = now;
-        const dotEl = el("circle", { cx: e.clientX, cy: e.clientY, r: rand(1.6, 3), fill: "url(#dust)" }, fx);
-        dotEl.animate(
-          [{ opacity: 0.75, transform: "scale(1)" }, { opacity: 0, transform: "scale(0.2)" }],
-          { duration: 520, easing: "ease-out" }
-        ).onfinish = () => dotEl.remove();
+      idleHide = setTimeout(() => head.setAttribute("opacity", "0"), 260);
+      if (lx !== null) {
+        const dist = Math.hypot(x - lx, y - ly);
+        if (dist > 1.2) {
+          const seg = el("line", {
+            class: "trail", x1: lx, y1: ly, x2: x, y2: y,
+            stroke: "#bcd8ff", "stroke-width": Math.min(3, 1.2 + dist * 0.05).toFixed(2), "stroke-linecap": "round"
+          }, fx);
+          seg.animate([{ opacity: 0.7 }, { opacity: 0 }], { duration: 430, easing: "ease-out" }).onfinish = () => seg.remove();
+        }
       }
+      lx = x; ly = y;
     }, { passive: true });
 
-    // parallax target follows the cursor too
     window.addEventListener("mousemove", (e) => {
       tgtX = ((e.clientX / window.innerWidth) - 0.5) * -2 * PARALLAX;
       tgtY = ((e.clientY / window.innerHeight) - 0.5) * -2 * PARALLAX;
     }, { passive: true });
   }
 
-  /* --------------------------------------------------------- shooting stars
-     Larger, easier to notice but not frequent. They streak through the
-     background only, steering clear of the figure's on-screen box. */
+  /* --------------------------------------------------------- shooting stars */
 
   let figureBox = null;
   function computeFigureBox() {
@@ -501,53 +452,20 @@
       if (!document.hidden && figureBox) {
         const W = window.innerWidth, H = window.innerHeight;
         let x1, y1, tries = 0;
-        do {
-          x1 = rand(0, W); y1 = rand(0, H * 0.85); tries++;
-        } while (tries < 12 &&
-          x1 > figureBox.l && x1 < figureBox.rt && y1 > figureBox.t && y1 < figureBox.b);
+        do { x1 = rand(0, W); y1 = rand(0, H * 0.85); tries++; }
+        while (tries < 12 && x1 > figureBox.l && x1 < figureBox.rt && y1 > figureBox.t && y1 < figureBox.b);
 
-        const ang = rand(Math.PI * 0.08, Math.PI * 0.42); // down-right-ish
-        const len = rand(110, 190);
+        const ang = rand(Math.PI * 0.08, Math.PI * 0.42), len = rand(110, 190);
         const x2 = x1 + Math.cos(ang) * len, y2 = y1 + Math.sin(ang) * len;
-
         const g = el("g", { class: "shooting-star" }, meteorGroup);
-        const line = el("line", {
-          x1, y1, x2, y2,
-          stroke: "#eaf2ff", "stroke-width": 2.2,
-          "stroke-dasharray": len + " " + (len + 60), "stroke-dashoffset": len
-        }, g);
+        const line = el("line", { x1, y1, x2, y2, stroke: "#eaf2ff", "stroke-width": 2.2, "stroke-dasharray": len + " " + (len + 60), "stroke-dashoffset": len }, g);
         const dot = el("circle", { cx: x2, cy: y2, r: 2.6, fill: "url(#dust)" }, g);
-        line.animate(
-          [{ strokeDashoffset: len, opacity: 0 },
-           { opacity: 1, offset: 0.25 },
-           { strokeDashoffset: -60, opacity: 0 }],
-          { duration: 850, easing: "ease-out" }
-        );
-        dot.animate(
-          [{ opacity: 0, transform: "translate(0,0)" },
-           { opacity: 1, offset: 0.25 },
-           { opacity: 0, transform: `translate(${Math.cos(ang) * 30}px, ${Math.sin(ang) * 30}px)` }],
-          { duration: 850, easing: "ease-out" }
-        ).onfinish = () => g.remove();
+        line.animate([{ strokeDashoffset: len, opacity: 0 }, { opacity: 1, offset: 0.25 }, { strokeDashoffset: -60, opacity: 0 }], { duration: 850, easing: "ease-out" });
+        dot.animate([{ opacity: 0, transform: "translate(0,0)" }, { opacity: 1, offset: 0.25 }, { opacity: 0, transform: `translate(${Math.cos(ang) * 30}px, ${Math.sin(ang) * 30}px)` }], { duration: 850, easing: "ease-out" }).onfinish = () => g.remove();
       }
       setTimeout(shoot, rand(14000, 30000));
     }
     setTimeout(shoot, rand(4000, 9000));
-  }
-
-  // Occasionally nudge a random interactive star so it's noticed — a hint that
-  // these stars are alive and clickable (helps discovery, esp. on touch).
-  if (!reduceMotion) {
-    function tease() {
-      if (!document.hidden && !activeStar && interactive.length) {
-        const s = interactive[Math.floor(Math.random() * interactive.length)];
-        const st = state[s.id];
-        st.vx += rand(-1.4, 1.4); st.vy += rand(-1.8, -0.6);
-        active.add(s.id);
-      }
-      setTimeout(tease, rand(6000, 11000));
-    }
-    setTimeout(tease, 5000);
   }
 
   /* ------------------------------------------------------- social + eternity */
@@ -578,25 +496,33 @@
 
   if (typeof BIRTH_ISO !== "undefined") {
     const birth = new Date(BIRTH_ISO).getTime();
-    function updateEternity() {
+    const updateEternity = () => {
       const days = Math.floor((Date.now() - birth) / 86400000);
       eternityEl.textContent = "✦ " + days.toLocaleString() + " days into eternity";
-    }
+    };
     updateEternity();
     setInterval(updateEternity, 60000);
   }
 
-  /* ----------------------------------------------------------------- resize */
+  /* --------------------------------------------- responsive viewBox + resize
+     On phones, crop the viewBox tight around the figure so Moroni is large
+     and centered (the full-screen background fills everything around it). */
+
+  function setViewBox() {
+    const mobile = window.innerWidth <= 640;
+    sky.setAttribute("viewBox", mobile ? "180 130 680 520" : "0 0 1000 700");
+  }
+  setViewBox();
 
   let resizeTimer;
   window.addEventListener("resize", () => {
+    setViewBox();
     computeFigureBox();
     positionHint();
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(populateBackground, 200); // debounce the rebuild
+    resizeTimer = setTimeout(populateBackground, 200);
   });
 
-  // initial geometry-dependent setup (after layout settles)
   requestAnimationFrame(() => { computeFigureBox(); positionHint(); });
   window.addEventListener("load", () => { computeFigureBox(); positionHint(); });
 })();
