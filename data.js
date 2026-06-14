@@ -2,136 +2,203 @@
    data.js — all editable content for the constellation site
    ============================================================================
 
-   HOW TO EDIT STAR CONTENT
-   ------------------------
-   Every clickable star's text lives in STAR_CONTENT below. Each entry:
+   STAR CONTENT
+   ------------
+   Every clickable star is one entry in STAR_CONTENT. Each entry:
 
      {
-       id: "alpha",                          // unique key, links to the geometry
-       designation: "α Moronis",             // Bayer-style name shown on hover
-       label: "Core Identity",               // short category shown on hover
-       title: "...",                         // headline in the detail panel
-       body: "...",                          // 2–3 sentences in the panel
-       link: { text: "...", url: "..." }     // optional link, or null for none
+       id: "cryopets",            // unique key; matches a star's `content` below
+       section: "iic",            // motivations | iic | background  → sets COLOR
+       size: "largest",           // largest | large | medium | small → brightness
+       name: "Cryopets",          // headline + hover label
+       subtitle: "Cryopreservation Service Provider",
+       meta: "Head of Growth · 2025–Present", // small role/date/reference line
+       body: "...",               // paragraph(s) in the detail panel
+       link: { text: "cryopets.com", url: "https://cryopets.com" } | null,
+       connectsTo: ["perfuslation"] // ids whose connecting line glows on hover
      }
 
-   Just edit title / body / link — nothing else needs to change.
+   COLORS  (lines always stay electric blue)
+       motivations → gold      (the flag / Title of Liberty)
+       iic         → electric blue
+       background  → silver-white
 
-   HOW TO ADD AN INTERACTIVE STAR
-   ------------------------------
-   1. Pick (or add) a star in FIGURE_STARS and set its `content` field to a
-      new id, e.g.  { id: "cloak1", x: 290, y: 290, r: 4.5, content: "nu" }.
-      (Stars with content: null are decorative only.)
-   2. Add a matching entry to STAR_CONTENT with id: "nu". Its position in the
-      STAR_CONTENT array sets its keyboard tab order.
+   SIZES → radius/brightness: largest, large, medium, small.
 
-   HOW TO REMOVE ONE
-   -----------------
-   Delete its STAR_CONTENT entry and set that star's `content` back to null.
+   MAPPING A STAR TO A PLACE ON THE FIGURE
+   ---------------------------------------
+   In FIGURE_STARS below, set a star's `content` to the id you want there
+   (and clear the old one to null). e.g. to move Cosmism, find the star you
+   want and set content: "cosmism". Position in STAR_CONTENT = tab order.
 
-   THE FIGURE GEOMETRY
-   -------------------
-   FIGURE_STARS is the node list (x/y in the 1000×700 SVG viewBox, r = core
-   radius in px). FIGURE_EDGES is a list of [idA, idB] pairs drawn as thin
-   constellation lines. Tweak coordinates freely — everything else adapts.
+   RELATED STARS / HOVER GLOW
+   --------------------------
+   `connectsTo` makes the constellation line between two stars brighten on
+   hover — but only if a line already runs between their two positions, so
+   place related stars next to each other (see the company↔project pairs).
+
+   FOOTER: SOCIAL_LINKS + BIRTH_ISO are near the bottom of this file.
    ========================================================================== */
 
 const STAR_CONTENT = [
+  /* ---- MOTIVATIONS (gold) — on the flag --------------------------------- */
   {
-    id: "alpha",
-    designation: "α Moronis",
-    label: "Core Identity",
-    title: "PLACEHOLDER — One line that says who Hyrum is",
-    body: "PLACEHOLDER — A two-to-three sentence mission statement. What drives him, what he is building toward, the thread that ties everything below together.",
-    link: null
+    id: "title",
+    section: "motivations",
+    size: "largest",
+    name: "Title of Liberty",
+    subtitle: "The Book of Mormon",
+    meta: "Alma 46:12",
+    body: "In the Book of Mormon, another testament of Jesus Christ, Captain Moroni raises the Title of Liberty as a banner in defense of God, religion, freedom, peace, family, and future generations. For Hyrum, this declaration is not only a religious symbol, but a guiding framework for life and work. It represents the conviction that civilization, family, faith, and human flourishing must be actively defended and built. The image of Captain Moroni and his banner inspired the constellation imagery throughout this website.",
+    link: null,
+    connectsTo: []
   },
   {
-    id: "beta",
-    designation: "β Moronis",
-    label: "Beliefs & Worldview",
-    title: "PLACEHOLDER — Cosmist & Christian",
-    body: "PLACEHOLDER — What that pairing means to him. Two or three sentences on how a cosmic future and an ancient faith fit together in one worldview.",
-    link: null
+    id: "cosmism",
+    section: "motivations",
+    size: "largest",
+    name: "Cosmism",
+    subtitle: "Cosmist",
+    meta: "2025–Present",
+    body: "Hyrum began publicly identifying with Cosmism in early 2025. Cosmism is a philosophical tradition concerned with humanity's long-term flourishing, the expansion of life and intelligence beyond Earth, radical scientific progress, and the eventual overcoming of death and biological limitation. For Hyrum, Cosmism is not a replacement for faith, but a practical extension of it: a call to build the Kingdom of Heaven on earth through organized work, scientific progress, and faith in Jesus Christ.",
+    link: null,
+    connectsTo: []
   },
   {
-    id: "gamma",
-    designation: "γ Moronis",
-    label: "Faith & Family",
-    title: "PLACEHOLDER — The things held closest",
-    body: "PLACEHOLDER — Two or three sentences about faith and family: the people and convictions at the center of his life.",
-    link: null
+    id: "christianity",
+    section: "motivations",
+    size: "medium",
+    name: "Christianity",
+    subtitle: "Believer",
+    meta: "2004–Present",
+    body: "Hyrum was raised in a Bible-believing Christian home where scripture, prayer, family worship, and service were part of daily life. His faith in Jesus Christ deepened during his two-year mission and continues to shape his view of responsibility, work, and human dignity. Christianity is the moral foundation beneath his interest in science, technology, and the long-term future of mankind.",
+    link: null,
+    connectsTo: ["church"]
   },
   {
-    id: "delta",
-    designation: "δ Moronis",
-    label: "Current Project",
-    title: "PLACEHOLDER — Main project name",
-    body: "PLACEHOLDER — What he is building right now, why it matters, and where it stands. Two or three sentences.",
-    link: { text: "See the project", url: "#" }
+    id: "church",
+    section: "motivations",
+    size: "medium",
+    name: "The Church",
+    subtitle: "Member",
+    meta: "2004–Present",
+    body: "Hyrum was born into The Church of Jesus Christ of Latter-day Saints and identifies first and foremost as a believer in Jesus Christ. He believes his church to be God's church and the Kingdom of Heaven on earth. He attends church weekly with his family and regularly attends the temple for sacred worship. His faith informs his belief that building, healing, learning, and preserving life are not separate from discipleship, but part of it.",
+    link: null,
+    connectsTo: ["christianity"]
+  },
+
+  /* ---- IMMORTALITY INDUSTRIAL COMPLEX (electric blue) — head, hands, body */
+  {
+    id: "cryopets",
+    section: "iic",
+    size: "largest",
+    name: "Cryopets",
+    subtitle: "Cryopreservation Service Provider",
+    meta: "Head of Growth Operations · 2025–Present",
+    body: "Cryopets is building cryopreservation services for pets, with the goal of ending pet death. After his longtime friend Kai Micah Mills founded the company, Hyrum left Pennsylvania and moved to Texas to help build Cryopets' first official lab and early operating base. He joined, and since joining has helped the company through its first raise, securing its first facility, and fully relocating its founding team. As Head of Growth, Hyrum has worked across growth, media, partnerships, customer acquisition, public messaging, and early operational systems. Cryopets has raised millions of dollars from venture capital firms including Valyrian, Prelude, and Zee Prime Capital. The company represents Hyrum's central operating role in the fight against biological decay, beginning with pets and scaling toward broader whole-body cryopreservation, with the goal of ending human death.",
+    link: { text: "cryopets.com", url: "https://cryopets.com" },
+    connectsTo: ["perfuslation"]
   },
   {
-    id: "epsilon",
-    designation: "ε Moronis",
-    label: "Second Project",
-    title: "PLACEHOLDER — Second project name",
-    body: "PLACEHOLDER — The other hand on the pole: a side project, collaboration, or long-running effort. Two or three sentences.",
-    link: { text: "Learn more", url: "#" }
+    id: "perfuslation",
+    section: "iic",
+    size: "medium",
+    name: "Perfuslation",
+    subtitle: "Cryopets Research Project",
+    meta: "Lab Assistant · 2026–Present",
+    body: "Perfuslation is a research project focused on organ cryopreservation and revival through advanced perfusion-based techniques. Working alongside Cryopets' scientific leadership, Hyrum supports early development of the project as part of his transition from growth and operations into more direct technical contribution. The project reflects his broader aim to help turn biostasis from a speculative field into an engineering discipline with practical milestones.",
+    link: null,
+    connectsTo: ["cryopets"]
   },
   {
-    id: "zeta",
-    designation: "ζ Moronis",
-    label: "Key Life Event I",
-    title: "PLACEHOLDER — First milestone",
-    body: "PLACEHOLDER — A formative event written into the banner. Two or three sentences on what happened and what it changed.",
-    link: null
+    id: "hydradao",
+    section: "iic",
+    size: "large",
+    name: "HydraDAO",
+    subtitle: "Replacement Research",
+    meta: "Growth · 2024–Present",
+    body: "Hyrum helped build HydraDAO's early fundraising and media efforts. HydraDAO is a nonprofit funding frontier science focused on whole-body replacement, cloned and synthetic embryos, progressive brain tissue replacement, organ replacement, bodyoids, and other engineering-heavy approaches to biological repair. The organization has raised over $4M to support high-risk research that traditional institutions are often too slow or conservative to fund.",
+    link: { text: "hydradao.org", url: "https://hydradao.org" },
+    connectsTo: ["dowellbio"]
   },
   {
-    id: "eta",
-    designation: "η Moronis",
-    label: "Key Life Event II",
-    title: "PLACEHOLDER — Second milestone",
-    body: "PLACEHOLDER — Another defining chapter. Two or three sentences.",
-    link: null
+    id: "dowellbio",
+    section: "iic",
+    size: "small",
+    name: "Dowell Bio",
+    subtitle: "HydraDAO-Funded Research",
+    meta: "Investor",
+    body: "Dowell Bio is a HydraDAO-funded research effort focused on spinal cord transection and refusion. HydraDAO is acting as the sole funder for this ongoing scientific research. In 2025, the team conducted over 200 rat surgeries with rehabilitation and video tracking, developed a roadmap toward human trials, and began analyzing microscopy and clinical data for patents and research papers. Early pig trials have also begun, expanding the project from small-animal work toward larger translational models.",
+    link: null,
+    connectsTo: ["hydradao"]
   },
   {
-    id: "theta",
-    designation: "θ Moronis",
-    label: "Key Life Event III",
-    title: "PLACEHOLDER — Third milestone",
-    body: "PLACEHOLDER — The most recent turning point. Two or three sentences.",
-    link: null
+    id: "cryodao",
+    section: "iic",
+    size: "large",
+    name: "CryoDAO",
+    subtitle: "Cryopreservation Research",
+    meta: "Growth · 2024–Present",
+    body: "Hyrum joined CryoDAO in late 2024. CryoDAO is a nonprofit organization funding cryopreservation research across organ preservation, whole-body preservation, and revival-relevant biology. It has backed research including sheep ovary vitrification and transplantation, whole non-hibernating mammal high-subzero preservation and revival, and additional projects across the biostasis field. To date, CryoDAO has raised over $5M for cryopreservation research.",
+    link: { text: "cryodao.org", url: "https://cryodao.org" },
+    connectsTo: ["cryorat"]
   },
   {
-    id: "iota",
-    designation: "ι Moronis",
-    label: "Skills & Craft",
-    title: "PLACEHOLDER — What he's good at",
-    body: "PLACEHOLDER — The craft carried on his shoulders: skills, tools, disciplines. Two or three sentences.",
-    link: null
+    id: "cryorat",
+    section: "iic",
+    size: "medium",
+    name: "CryoRat",
+    subtitle: "CryoDAO Program",
+    meta: "Growth · 2024–Present",
+    body: "CryoRat is CryoDAO's whole-body rat preservation program with Advanced Neural Biosciences and Aschwin de Wolf. The program focuses on high-subzero cryoprotection as a staged path toward eventual whole-body mammalian revival. Hyrum co-launched and helped prepare the fundraiser, which closed at $900K in less than a day, with the first $500K raised in under an hour. The project includes perfusion optimization, cryoprotectant mapping across organs and brain tissue, viability testing, in-house micro-CT, and staged revival attempts as milestones are reached.",
+    link: null,
+    connectsTo: ["cryodao"]
   },
   {
-    id: "kappa",
-    designation: "κ Moronis",
-    label: "Education",
-    title: "PLACEHOLDER — Where he trained",
-    body: "PLACEHOLDER — Schools, degrees, self-teaching — the knee he rises from. Two or three sentences.",
-    link: null
+    id: "abf",
+    section: "iic",
+    size: "large",
+    name: "ABF",
+    subtitle: "Biostasis Facility",
+    meta: "Growth · 2025–Present",
+    body: "ABF is a nonprofit building a flagship biostasis research lab and long-term patient care facility. The facility brings together Cryopets, Tomorrow Bio, the Space Biostasis Coalition, CryoDAO, and HydraDAO to support research, storage, and long-term care for patients from multiple providers. Hyrum helped begin fundraising efforts for the project in 2025. ABF represents the infrastructure layer of the biostasis ecosystem: the physical foundation needed to support serious long-term work in cryopreservation.",
+    link: { text: "americanbiostasis.org", url: "https://americanbiostasis.org" },
+    connectsTo: []
+  },
+
+  /* ---- BACKGROUND (silver) — at the feet -------------------------------- */
+  {
+    id: "mission",
+    section: "background",
+    size: "medium",
+    name: "Mission, UT",
+    subtitle: "Missionary",
+    meta: "2022–2024",
+    body: "Hyrum submitted his papers and left to serve a two-year mission for The Church of Jesus Christ of Latter-day Saints in the late spring of 2022. He was called to the Utah Salt Lake City Mission, where his assigned areas included Holladay, Murray, and Cottonwood Heights. At times, he served across areas covering up to 20 congregations. His mission developed his love for church history, apologetics, public speaking, discipline, and direct outreach. During this period, he also met Kai Micah Mills, who later became his friend, colleague, and founder of Cryopets.",
+    link: null,
+    connectsTo: ["byu"]
   },
   {
-    id: "lambda",
-    designation: "λ Moronis",
-    label: "Origins",
-    title: "PLACEHOLDER — Where he comes from",
-    body: "PLACEHOLDER — Hometown and roots, the ground the back foot still touches. Two or three sentences.",
-    link: null
+    id: "byu",
+    section: "background",
+    size: "small",
+    name: "BYU",
+    subtitle: "Mechanical Engineering",
+    meta: "Spring 2022",
+    body: "After graduating high school early, Hyrum attended a single semester at one of the BYU campuses as a declared Mechanical Engineering major before leaving to serve a two-year mission for his church. During this time, he became disillusioned with the conventional academic path, but gained a lasting love for the arts and humanities from a professor he admired. Though he did not continue formal university study, this period helped shape his interest in first principles, civilization, history, and the human condition.",
+    link: null,
+    connectsTo: ["mission"]
   },
   {
-    id: "mu",
-    designation: "μ Moronis",
-    label: "Foundations & Values",
-    title: "PLACEHOLDER — What the pole is planted in",
-    body: "PLACEHOLDER — The values everything else is staked on. Two or three sentences.",
-    link: null
+    id: "freemasonry",
+    section: "background",
+    size: "small",
+    name: "Freemasonry",
+    subtitle: "Fraternity",
+    meta: "Master Mason · 2025–Present",
+    body: "Hyrum's interest in esoteric knowledge, moral formation, fraternity, and self-improvement eventually led him to Freemasonry. He received his Third Degree in early 2025, becoming a Master Mason. While not central to his professional work, Freemasonry reflects his broader interest in disciplined self-development, inherited tradition, symbolism, and moral architecture.",
+    link: null,
+    connectsTo: []
   }
 ];
 
@@ -145,19 +212,19 @@ const STAR_CONTENT = [
 
 const FIGURE_STARS = [
   // — Flag tip & banner (irregular polygon streaming upper right) —
-  { id: "s0",  x: 474, y: 159, r: 6.0, content: "alpha" }, // flag tip — brightest
+  { id: "s0",  x: 474, y: 159, r: 6.0, content: "title" }, // flag tip — Title of Liberty
   { id: "s1",  x: 483, y: 181, r: 2.0, content: null },
   { id: "s2",  x: 532, y: 199, r: 2.2, content: null },
   { id: "s3",  x: 495, y: 209, r: 2.0, content: null },
-  { id: "s4",  x: 592, y: 219, r: 4.2, content: "zeta" },  // banner, upper edge
-  { id: "s5",  x: 622, y: 247, r: 2.0, content: null },
+  { id: "s4",  x: 592, y: 219, r: 4.2, content: "christianity" }, // banner — faith
+  { id: "s5",  x: 622, y: 247, r: 2.0, content: "church" },       // banner — faith (next to Christianity)
   { id: "s6",  x: 505, y: 248, r: 2.0, content: null },
   { id: "s7",  x: 554, y: 249, r: 2.0, content: null },
   { id: "s8",  x: 648, y: 263, r: 2.5, content: null },
   { id: "s9",  x: 694, y: 270, r: 2.0, content: null },
   { id: "s10", x: 580, y: 274, r: 2.8, content: null },
   { id: "s11", x: 500, y: 276, r: 2.7, content: null },    // banner inner corner
-  { id: "s12", x: 730, y: 291, r: 4.2, content: "eta" },   // banner, mid sweep
+  { id: "s12", x: 730, y: 291, r: 4.2, content: "cosmism" }, // banner, far sweep
   { id: "s14", x: 540, y: 300, r: 2.0, content: null },
   { id: "s16", x: 641, y: 315, r: 2.0, content: null },
   { id: "s17", x: 690, y: 320, r: 2.3, content: null },
@@ -173,33 +240,33 @@ const FIGURE_STARS = [
   { id: "s42", x: 793, y: 383, r: 2.0, content: null },
   { id: "s44", x: 742, y: 390, r: 2.3, content: null },
   { id: "s47", x: 714, y: 408, r: 2.6, content: null },
-  { id: "s49", x: 806, y: 414, r: 4.2, content: "theta" }, // banner trailing tip
+  { id: "s49", x: 806, y: 414, r: 4.2, content: null }, // banner trailing tip
 
   // — Pole (vertical at x≈474, flag tip above, base on the ground) —
   { id: "s19", x: 474, y: 320, r: 3.0, content: null },      // pole above the grip
-  { id: "s22", x: 481, y: 331, r: 4.5, content: "delta" },   // upper hand on pole
+  { id: "s22", x: 481, y: 331, r: 4.5, content: "cryopets" }, // upper hand — central role
   { id: "s27", x: 462, y: 338, r: 2.2, content: null },      // grip knuckles
   { id: "s29", x: 483, y: 344, r: 2.0, content: null },
   { id: "s31", x: 474, y: 351, r: 3.2, content: null },
   { id: "s32", x: 462, y: 352, r: 2.0, content: null },
-  { id: "s35", x: 474, y: 363, r: 4.5, content: "epsilon" }, // lower hand on pole
-  { id: "s78", x: 474, y: 641, r: 4.5, content: "mu" },      // pole base
+  { id: "s35", x: 474, y: 363, r: 4.5, content: null }, // lower hand on pole
+  { id: "s78", x: 474, y: 641, r: 4.5, content: "mission" }, // pole base — at the feet
 
   // — Head (small polygon, helmeted, facing the pole) —
-  { id: "s13", x: 374, y: 299, r: 4.2, content: "beta" },  // crown of the head
+  { id: "s13", x: 374, y: 299, r: 4.2, content: "cryodao" }, // crown of the head
   { id: "s15", x: 343, y: 302, r: 2.4, content: null },
-  { id: "s21", x: 393, y: 325, r: 2.7, content: null },
+  { id: "s21", x: 393, y: 325, r: 2.7, content: "cryorat" }, // head (next to CryoDAO)
   { id: "s26", x: 322, y: 335, r: 3.2, content: null },
   { id: "s30", x: 381, y: 350, r: 2.0, content: null },
   { id: "s33", x: 307, y: 353, r: 2.0, content: null },    // jaw / neck
 
   // — Shoulders, chest & arms —
-  { id: "s37", x: 273, y: 367, r: 4.6, content: "iota" },  // rear shoulder
+  { id: "s37", x: 273, y: 367, r: 4.6, content: "abf" },   // rear shoulder
   { id: "s39", x: 358, y: 374, r: 2.3, content: null },    // front shoulder
   { id: "s34", x: 375, y: 359, r: 2.6, content: null },
   { id: "s41", x: 375, y: 381, r: 2.0, content: null },
-  { id: "s45", x: 355, y: 394, r: 4.4, content: "gamma" }, // chest / heart
-  { id: "s46", x: 412, y: 399, r: 3.4, content: null },    // front forearm
+  { id: "s45", x: 355, y: 394, r: 4.4, content: "hydradao" }, // chest / heart
+  { id: "s46", x: 412, y: 399, r: 3.4, content: "perfuslation" }, // forearm (next to Cryopets)
   { id: "s51", x: 423, y: 423, r: 2.7, content: null },    // rear forearm
 
   // — Torso & hip —
@@ -208,7 +275,7 @@ const FIGURE_STARS = [
   { id: "s52", x: 283, y: 427, r: 2.0, content: null },
   { id: "s53", x: 270, y: 447, r: 2.9, content: null },
   { id: "s54", x: 239, y: 457, r: 3.0, content: null },    // small of the back
-  { id: "s55", x: 337, y: 462, r: 2.7, content: null },    // belly
+  { id: "s55", x: 337, y: 462, r: 2.7, content: "dowellbio" }, // belly (next to HydraDAO)
   { id: "s56", x: 348, y: 468, r: 3.1, content: null },
   { id: "s57", x: 312, y: 468, r: 2.1, content: null },
   { id: "s59", x: 310, y: 483, r: 2.5, content: null },
@@ -217,14 +284,14 @@ const FIGURE_STARS = [
   { id: "s64", x: 268, y: 506, r: 2.4, content: null },    // rear hip
 
   // — Front leg (knee up, foot planted beside the pole base) —
-  { id: "s61", x: 433, y: 488, r: 4.2, content: "kappa" }, // front knee
+  { id: "s61", x: 433, y: 488, r: 4.2, content: null }, // front knee
   { id: "s63", x: 448, y: 505, r: 2.0, content: null },
   { id: "s65", x: 403, y: 521, r: 2.4, content: null },    // front thigh
   { id: "s67", x: 435, y: 549, r: 3.3, content: null },    // shin
   { id: "s71", x: 397, y: 615, r: 2.2, content: null },    // heel
   { id: "s72", x: 411, y: 615, r: 2.3, content: null },
   { id: "s76", x: 387, y: 639, r: 2.3, content: null },
-  { id: "s77", x: 446, y: 639, r: 3.0, content: null },    // front foot at the pole
+  { id: "s77", x: 446, y: 639, r: 3.0, content: "byu" },   // front foot (next to Mission/base)
 
   // — Back leg (kneeling; shin folded, foot trailing lower left) —
   { id: "s66", x: 370, y: 548, r: 2.6, content: null },    // back thigh
@@ -232,8 +299,8 @@ const FIGURE_STARS = [
   { id: "s69", x: 234, y: 597, r: 2.1, content: null },
   { id: "s70", x: 262, y: 598, r: 2.0, content: null },
   { id: "s73", x: 258, y: 620, r: 3.0, content: null },
-  { id: "s74", x: 329, y: 630, r: 3.7, content: null },    // back foot, toes tucked
-  { id: "s75", x: 239, y: 637, r: 4.2, content: "lambda" } // trailing heel
+  { id: "s74", x: 329, y: 630, r: 3.7, content: "freemasonry" }, // back foot, toes tucked
+  { id: "s75", x: 239, y: 637, r: 4.2, content: null } // trailing heel
 ];
 
 /* Edges form a clean, readable skeleton: a closed banner outline with a few
