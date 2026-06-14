@@ -438,6 +438,46 @@
     }, { passive: true });
   }
 
+  /* ----------------------------------------------------- gyroscope parallax
+     On touch devices, tilting the phone drives the same background parallax
+     the mouse does on desktop — the sky shifts by depth as you tilt. The
+     first tilt reading becomes "neutral" so it works at any holding angle.
+
+     Notes: deviceorientation only fires on a secure context (HTTPS or
+     localhost), and iOS 13+ requires permission requested from a user
+     gesture — so we ask on the first touch. Falls back silently to the
+     autonomous ambient drift if unsupported, denied, or insecure. */
+
+  const isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+  if (!reduceMotion && isTouch && !hasFinePointer) {
+    const MAX_TILT = 20;     // px of shift at full tilt (scaled per layer depth)
+    const TILT_GAIN = 0.85;  // px per degree from the neutral hold
+    let beta0 = null, gamma0 = null;
+
+    function onTilt(e) {
+      if (e.gamma === null || e.beta === null) return;
+      if (gamma0 === null) { gamma0 = e.gamma; beta0 = e.beta; } // capture neutral
+      // gamma = left/right tilt, beta = front/back tilt. Move the sky opposite
+      // the tilt so it feels like parallax depth (same sign convention as mouse).
+      tgtX = clamp(-(e.gamma - gamma0) * TILT_GAIN, -MAX_TILT, MAX_TILT);
+      tgtY = clamp(-(e.beta - beta0) * TILT_GAIN, -MAX_TILT, MAX_TILT);
+    }
+
+    function enableTilt() {
+      if (typeof DeviceOrientationEvent === "undefined") return;
+      if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        // iOS — must be inside this user gesture
+        DeviceOrientationEvent.requestPermission()
+          .then((s) => { if (s === "granted") window.addEventListener("deviceorientation", onTilt); })
+          .catch(() => {});
+      } else {
+        window.addEventListener("deviceorientation", onTilt);
+      }
+    }
+    // request once, on the visitor's first tap
+    window.addEventListener("pointerdown", enableTilt, { once: true });
+  }
+
   /* --------------------------------------------------------- shooting stars */
 
   let figureBox = null;
