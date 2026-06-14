@@ -200,7 +200,6 @@ const FIGURE_STARS = [
   { id: "s41", x: 375, y: 381, r: 2.0, content: null },
   { id: "s45", x: 355, y: 394, r: 4.4, content: "gamma" }, // chest / heart
   { id: "s46", x: 412, y: 399, r: 3.4, content: null },    // front forearm
-  { id: "s50", x: 370, y: 421, r: 2.0, content: null },
   { id: "s51", x: 423, y: 423, r: 2.7, content: null },    // rear forearm
 
   // — Torso & hip —
@@ -212,7 +211,6 @@ const FIGURE_STARS = [
   { id: "s55", x: 337, y: 462, r: 2.7, content: null },    // belly
   { id: "s56", x: 348, y: 468, r: 3.1, content: null },
   { id: "s57", x: 312, y: 468, r: 2.1, content: null },
-  { id: "s58", x: 271, y: 478, r: 2.5, content: null },
   { id: "s59", x: 310, y: 483, r: 2.5, content: null },
   { id: "s60", x: 342, y: 487, r: 2.6, content: null },    // hip
   { id: "s62", x: 325, y: 489, r: 2.0, content: null },
@@ -238,41 +236,57 @@ const FIGURE_STARS = [
   { id: "s75", x: 239, y: 637, r: 4.2, content: "lambda" } // trailing heel
 ];
 
+/* Edges form a clean, readable skeleton: a closed banner outline with a few
+   interior folds, a single straight pole, a tight hand-knot, and one
+   unbroken chain per limb. Tweak freely — every line re-derives from the
+   two stars it names. */
 const FIGURE_EDGES = [
-  // Banner: upper edge sweeping right from the flag tip
-  ["s0", "s2"], ["s2", "s4"], ["s4", "s5"], ["s5", "s8"],
-  ["s8", "s9"], ["s9", "s12"], ["s12", "s18"], ["s18", "s28"],
-  // Banner: left edge descending beside the pole
-  ["s0", "s1"], ["s1", "s3"], ["s3", "s6"], ["s6", "s11"],
-  // Banner: inner fold lines
-  ["s7", "s10"], ["s10", "s16"], ["s16", "s20"], ["s17", "s20"],
-  ["s11", "s14"], ["s14", "s23"], ["s23", "s24"], ["s23", "s36"],
-  ["s24", "s36"], ["s36", "s44"], ["s44", "s47"], ["s40", "s47"],
-  // Banner: trailing lower points
-  ["s28", "s38"], ["s38", "s42"], ["s42", "s49"], ["s49", "s47"],
-  // Pole
-  ["s0", "s19"], ["s19", "s11"], ["s35", "s78"],
-  // Hands gripping the pole
-  ["s19", "s27"], ["s19", "s31"], ["s19", "s32"],
-  ["s22", "s27"], ["s22", "s31"], ["s22", "s32"],
-  ["s27", "s29"], ["s27", "s35"], ["s29", "s32"], ["s29", "s35"],
-  // Head polygon
-  ["s13", "s15"], ["s13", "s21"], ["s15", "s26"],
-  ["s21", "s30"], ["s26", "s33"], ["s30", "s34"],
-  // Neck, shoulders, arms
-  ["s33", "s37"], ["s33", "s45"], ["s21", "s39"], ["s34", "s39"],
-  ["s39", "s41"], ["s39", "s45"], ["s41", "s46"], ["s32", "s46"],
-  ["s46", "s51"], ["s50", "s51"], ["s35", "s51"],
-  // Torso: back line and belly
-  ["s37", "s43"], ["s37", "s48"], ["s43", "s45"], ["s43", "s52"],
-  ["s48", "s54"], ["s52", "s53"], ["s53", "s57"], ["s54", "s58"],
-  ["s58", "s59"], ["s58", "s64"], ["s45", "s55"], ["s50", "s56"],
-  ["s56", "s60"], ["s60", "s66"], ["s55", "s66"],
-  // Front leg: thigh, knee, shin, foot at the pole base
-  ["s35", "s61"], ["s61", "s63"], ["s61", "s65"], ["s63", "s67"],
-  ["s65", "s66"], ["s65", "s71"], ["s67", "s72"], ["s71", "s76"],
-  ["s72", "s77"], ["s76", "s77"], ["s77", "s78"],
-  // Back leg: folded knee and trailing foot
-  ["s64", "s68"], ["s66", "s74"], ["s68", "s69"], ["s69", "s75"],
-  ["s70", "s74"], ["s73", "s74"], ["s73", "s75"]
+  // Banner — closed outline (tip → top edge → right end → bottom edge → tip)
+  ["s0", "s2"], ["s2", "s4"], ["s4", "s5"], ["s5", "s8"], ["s8", "s9"],
+  ["s9", "s12"], ["s12", "s18"], ["s18", "s28"], ["s28", "s49"],
+  ["s0", "s1"], ["s1", "s3"], ["s3", "s6"], ["s6", "s11"], ["s11", "s14"],
+  ["s14", "s23"], ["s23", "s36"], ["s36", "s44"], ["s44", "s47"], ["s47", "s49"],
+  // Banner — a few interior folds for cloth texture
+  ["s11", "s10"], ["s7", "s10"], ["s10", "s16"], ["s16", "s20"], ["s20", "s25"],
+  ["s17", "s20"], ["s24", "s40"], ["s40", "s44"], ["s28", "s38"], ["s38", "s42"],
+  // Pole — one straight line, flag tip to base
+  ["s0", "s19"], ["s19", "s35"], ["s35", "s78"],
+  // Both hands gripping the pole (compact knot)
+  ["s19", "s22"], ["s22", "s27"], ["s27", "s31"], ["s31", "s35"],
+  ["s27", "s29"], ["s29", "s32"], ["s32", "s35"],
+  // Head (helmet polygon)
+  ["s13", "s15"], ["s15", "s26"], ["s26", "s33"], ["s13", "s21"],
+  ["s21", "s30"], ["s30", "s34"],
+  // Neck, shoulders, and the two arms reaching to the grip
+  ["s33", "s37"], ["s34", "s39"], ["s33", "s45"],
+  ["s39", "s41"], ["s41", "s46"], ["s46", "s22"],   // front arm → upper hand
+  ["s45", "s51"], ["s51", "s35"],                    // rear arm → lower hand
+  // Torso — back curve and front line meeting at the hip
+  ["s37", "s48"], ["s48", "s43"], ["s43", "s52"], ["s52", "s53"], ["s53", "s54"],
+  ["s54", "s64"], ["s37", "s45"], ["s45", "s55"], ["s55", "s56"], ["s56", "s60"],
+  ["s60", "s64"],
+  // Armor plate over the midsection (small quad)
+  ["s56", "s57"], ["s57", "s59"], ["s59", "s62"], ["s62", "s60"],
+  // Front leg — raised knee down to the foot at the pole base
+  ["s60", "s61"], ["s61", "s63"], ["s63", "s67"], ["s61", "s65"], ["s65", "s66"],
+  ["s67", "s72"], ["s72", "s77"], ["s77", "s76"], ["s76", "s71"], ["s71", "s67"],
+  ["s77", "s78"],
+  // Back leg — folded knee on the ground, foot trailing lower-left
+  ["s64", "s68"], ["s68", "s70"], ["s70", "s74"], ["s68", "s69"], ["s69", "s75"],
+  ["s73", "s75"], ["s73", "s74"], ["s66", "s74"]
 ];
+
+/* --- Editable extras -----------------------------------------------------
+   SOCIAL_LINKS: the icons in the footer. Set each url; use "" to hide a row.
+   For email use a mailto: url. Reorder freely — icons render in this order.
+   BIRTH_ISO: the moment the "days into eternity" counter starts ticking.   */
+
+const SOCIAL_LINKS = [
+  { platform: "x",         url: "#" },   // PLACEHOLDER — your X / Twitter URL
+  { platform: "linkedin",  url: "#" },   // PLACEHOLDER — your LinkedIn URL
+  { platform: "youtube",   url: "#" },   // PLACEHOLDER — your YouTube URL
+  { platform: "instagram", url: "#" },   // PLACEHOLDER — your Instagram URL
+  { platform: "email",     url: "mailto:hello@example.com" } // PLACEHOLDER — your email
+];
+
+const BIRTH_ISO = "2004-04-21T00:00:00"; // 12:00 AM, April 21 2004 (local time)
