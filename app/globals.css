@@ -287,6 +287,33 @@ body {
   stroke-width: 1.5;
   stroke-dasharray: 3 3;
 }
+
+/* Selected star: the round core morphs into the sparkle, same blue color. */
+.sparkle {
+  display: none;
+  color: #dcebff;
+  pointer-events: none;
+}
+.star.is-active .core {
+  display: none;
+}
+.star.is-active .sparkle {
+  display: block;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sparkle-in 0.35s ease;
+}
+@keyframes sparkle-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-25deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
 #sky.is-dimmed .star:not(.is-active) {
   opacity: calc(var(--base-op, 1) * 0.4);
 }
@@ -353,7 +380,7 @@ body {
   position: fixed;
   right: 28px;
   bottom: 56px;
-  max-width: 260px;
+  white-space: nowrap;
   z-index: 5;
   text-align: right;
   pointer-events: none;
@@ -640,7 +667,7 @@ body {
     left: 0;
     right: 0;
     bottom: 14vh;
-    max-width: none;
+    white-space: normal;
     text-align: center;
     font-size: clamp(1rem, 4.6vw, 1.4rem);
   }
@@ -698,5 +725,8 @@ html.reduce-motion .panel {
   transition: none;
 }
 html.reduce-motion .legend-sub {
+  animation: none;
+}
+html.reduce-motion .star.is-active .sparkle {
   animation: none;
 }

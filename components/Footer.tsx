@@ -41,13 +41,17 @@ export default function Footer() {
 
       <nav className="social" aria-label="Social links">
         {SOCIAL_LINKS.filter((s) => s.url && ICON_PATHS[s.platform]).map((s) => {
-          const external = !s.url.startsWith("mailto:");
+          // Email opens the default mail app. Accept a bare address or a full
+          // mailto: URL, and never open it in a new tab.
+          const isMail = s.platform === "email" || s.url.startsWith("mailto:");
+          const href =
+            isMail && !s.url.startsWith("mailto:") ? `mailto:${s.url}` : s.url;
           return (
             <a
               key={s.platform}
-              href={s.url}
+              href={href}
               aria-label={ICON_LABEL[s.platform] ?? s.platform}
-              {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              {...(isMail ? {} : { target: "_blank", rel: "noopener noreferrer" })}
             >
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d={ICON_PATHS[s.platform]} />

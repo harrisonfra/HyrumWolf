@@ -33,10 +33,7 @@ export default function Panel({ content, reducedMotion, onClose }: Props) {
   }, [open]);
 
   function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      onClose();
-      return;
-    }
+    // Escape is handled globally in Sky; here we only trap Tab focus.
     if (e.key !== "Tab" || !panelRef.current) return;
     const focusables = panelRef.current.querySelectorAll<HTMLElement>(
       'button, [href], [tabindex]:not([tabindex="-1"])'

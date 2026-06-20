@@ -49,6 +49,17 @@ export default function Sky() {
     document.documentElement.classList.toggle("reduce-motion", reducedMotion);
   }, [reducedMotion]);
 
+  // Escape closes the topmost thing: the story panel first, then the legend menu.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (activeId) closePanel();
+      else if (activeSection) setActiveSection(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [activeId, activeSection, closePanel]);
+
   const activeContent =
     activeId !== null ? STARS.find((s) => s.id === activeId) ?? null : null;
 
