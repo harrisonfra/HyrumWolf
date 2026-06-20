@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SECTION } from "@/lib/theme";
 import type { StarContent } from "@/lib/types";
+
+// Accent for the designation + link — the same blue as the clickable stars.
+const ACCENT = "#bcd6ff";
 
 interface Props {
   content: StarContent | null;
@@ -51,7 +53,7 @@ export default function Panel({ content, reducedMotion, onClose }: Props) {
     }
   }
 
-  const accent = shown ? SECTION[shown.section].label : undefined;
+  const accent = ACCENT;
   const external = shown?.link?.url.startsWith("http");
 
   return (

@@ -27,8 +27,8 @@ npm run build    # production build
 | `components/Footer.tsx` | Social icons + "days into eternity" counter |
 | `components/CometTrail.tsx` | Cursor comet (fine pointers only) |
 | `lib/content.ts` | **All editable content** — the stories, social links, birth date |
-| `lib/figure.ts` | **Generated** geometry (nodes + edges). Do not hand-edit |
-| `lib/theme.ts` / `lib/types.ts` | Section colors / size tiers and shared types |
+| `lib/figure.ts` | **Generated** geometry (line-art path + star nodes). Do not hand-edit |
+| `lib/types.ts` | Shared content types |
 | `reference/` | Source art + the generator + the old reference images |
 | `legacy/` | The original static HTML/CSS/JS site this replaced |
 

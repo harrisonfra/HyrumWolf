@@ -207,11 +207,11 @@ export const STARS: StarContent[] = [
 // ---- Footer -----------------------------------------------------------------
 // Set each url; use "" to hide a row. For email use a mailto: url.
 export const SOCIAL_LINKS: SocialLink[] = [
-  { platform: "x", url: "#" }, // PLACEHOLDER — X / Twitter URL
-  { platform: "linkedin", url: "#" }, // PLACEHOLDER — LinkedIn URL
-  { platform: "youtube", url: "#" }, // PLACEHOLDER — YouTube URL
-  { platform: "instagram", url: "#" }, // PLACEHOLDER — Instagram URL
-  { platform: "email", url: "mailto:hello@example.com" }, // PLACEHOLDER — email
+  { platform: "x", url: "https://x.com/hyrumwolf?s=11" },
+  { platform: "linkedin", url: "https://www.linkedin.com/in/hyrum-wolf-313512280/" },
+ // { platform: "youtube", url: "#" }, // PLACEHOLDER — YouTube URL
+  { platform: "instagram", url: "https://www.instagram.com/hyrum_wolf?utm_source=qr" }, // PLACEHOLDER — Instagram URL
+  { platform: "email", url: "hyrum@cryopets.com" },
 ];
 
 // The moment the "days into eternity" counter starts ticking.

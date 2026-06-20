@@ -193,6 +193,19 @@ body {
 
 /* --- Constellation lines ------------------------------------------------- */
 
+/* The figure's line art, drawn verbatim from the reference SVG. */
+.edges-path {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#sky.is-dimmed .edges-path {
+  opacity: 0.45;
+}
+
 .edge {
   stroke: var(--line);
   stroke-width: 1.1;
@@ -278,6 +291,26 @@ body {
   opacity: calc(var(--base-op, 1) * 0.4);
 }
 
+/* Legend filter: dim everything except the chosen category's stars. */
+#sky.is-filtered .edges-path {
+  opacity: 0.25;
+}
+#sky.is-filtered .star:not(.star--match) {
+  opacity: calc(var(--base-op, 1) * 0.2);
+}
+#sky.is-filtered .star--match .halo {
+  animation: none;
+  opacity: 1;
+  transform: scale(1.4);
+}
+#sky.is-filtered .star--match .core {
+  fill: var(--star-hot);
+}
+/* A story opened from the dropdown stays bright even if outside the filter. */
+#sky.is-filtered .star.is-active {
+  opacity: 1;
+}
+
 /* Shooting stars + cursor comet */
 .shooting-star {
   stroke-linecap: round;
@@ -315,19 +348,20 @@ body {
 
 /* --- Big hint ------------------------------------------------------------ */
 
+/* Desktop: tucked in the bottom-right corner. Mobile: centered (see below). */
 .hint {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 14vh;
+  right: 28px;
+  bottom: 56px;
+  max-width: 260px;
   z-index: 5;
-  text-align: center;
+  text-align: right;
   pointer-events: none;
   font-family: var(--font-body), "Cormorant Garamond", Georgia, serif;
   font-style: italic;
-  font-size: clamp(1.05rem, 2.6vw, 1.7rem);
+  font-size: clamp(0.95rem, 1.4vw, 1.2rem);
   letter-spacing: 0.04em;
-  color: rgba(208, 220, 244, 0.78);
+  color: rgba(208, 220, 244, 0.7);
   text-shadow: 0 0 16px rgba(120, 155, 220, 0.3);
   transition: opacity 0.5s ease;
 }
@@ -421,6 +455,114 @@ body {
   border-bottom-color: var(--gold-soft);
 }
 
+/* --- Legend / filter (left side) ----------------------------------------- */
+
+.legend {
+  position: fixed;
+  top: 116px;
+  left: 28px;
+  z-index: 5;
+  max-width: 230px;
+}
+.legend-title {
+  font-family: var(--font-serif), "Playfair Display", Georgia, serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(201, 212, 232, 0.5);
+  margin-bottom: 0.9rem;
+}
+.legend ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.legend-item {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 0 0 0 1.1rem;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body), "Cormorant Garamond", Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: rgba(201, 212, 232, 0.6);
+  transition:
+    color 0.25s ease,
+    text-shadow 0.25s ease;
+}
+.legend-item::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  font-size: 0.72em;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.legend-item:hover,
+.legend-item:focus-visible {
+  color: rgba(214, 230, 255, 0.95);
+  outline: none;
+}
+.legend-item.is-active {
+  color: #dcebff;
+  text-shadow: 0 0 12px rgba(140, 180, 255, 0.55);
+}
+.legend-item.is-active::before {
+  opacity: 1;
+}
+
+/* Dropdown of star names under an expanded category. */
+.legend-sub {
+  list-style: none;
+  margin: 0.45rem 0 0.3rem;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  animation: legend-reveal 0.25s ease;
+}
+@keyframes legend-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.legend-star {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body), "Cormorant Garamond", Georgia, serif;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: rgba(201, 212, 232, 0.5);
+  transition:
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+}
+.legend-star:hover,
+.legend-star:focus-visible {
+  color: #dcebff;
+  outline: none;
+}
+.legend-star.is-active {
+  color: #dcebff;
+  text-shadow: 0 0 10px rgba(140, 180, 255, 0.5);
+}
+
 /* --- Eternity counter ---------------------------------------------------- */
 
 .eternity {
@@ -495,7 +637,24 @@ body {
     letter-spacing: 0.34em;
   }
   .hint {
+    left: 0;
+    right: 0;
+    bottom: 14vh;
+    max-width: none;
+    text-align: center;
     font-size: clamp(1rem, 4.6vw, 1.4rem);
+  }
+  .legend {
+    top: 92px;
+    left: 16px;
+    max-width: 62vw;
+  }
+  .legend-title {
+    font-size: 0.62rem;
+    margin-bottom: 0.55rem;
+  }
+  .legend-item {
+    font-size: 0.86rem;
   }
   .eternity {
     left: 0;
@@ -537,4 +696,7 @@ html.reduce-motion .star--interactive .halo {
 }
 html.reduce-motion .panel {
   transition: none;
+}
+html.reduce-motion .legend-sub {
+  animation: none;
 }

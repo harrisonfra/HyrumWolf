@@ -5,15 +5,17 @@ import BackgroundField from "./BackgroundField";
 import Constellation from "./Constellation";
 import Panel from "./Panel";
 import Footer from "./Footer";
+import Legend from "./Legend";
 import CometTrail from "./CometTrail";
 import { usePrefersReducedMotion, useFinePointer } from "./hooks";
 import { STARS } from "@/lib/content";
-import type { StarContent } from "@/lib/types";
+import type { StarContent, Section } from "@/lib/types";
 
 export default function Sky() {
   const reducedMotion = usePrefersReducedMotion();
   const finePointer = useFinePointer();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [hintGone, setHintGone] = useState(false);
   const lastFocused = useRef<HTMLElement | null>(null);
 
@@ -23,10 +25,23 @@ export default function Sky() {
     setHintGone(true);
   }, []);
 
+  // Close just the story panel (X button / Escape) and restore focus.
   const closePanel = useCallback(() => {
     setActiveId(null);
-    // Return focus to the star that opened the panel.
     lastFocused.current?.focus?.();
+  }, []);
+
+  // Toggle a legend category (highlight + dropdown); switching closes any panel.
+  const selectSection = useCallback((section: Section) => {
+    setActiveSection((cur) => (cur === section ? null : section));
+    setActiveId(null);
+  }, []);
+
+  // Clicking the empty sky clears the highlight, collapses the menu, and
+  // closes the panel.
+  const closeAll = useCallback(() => {
+    setActiveId(null);
+    setActiveSection(null);
   }, []);
 
   // Mark <html> so CSS can respond to reduced motion.
@@ -48,6 +63,13 @@ export default function Sky() {
 
       <BackgroundField reducedMotion={reducedMotion} finePointer={finePointer} />
 
+      <Legend
+        activeSection={activeSection}
+        activeId={activeId}
+        onSelectSection={selectSection}
+        onSelectStar={openStar}
+      />
+
       <header className="site-header">
         <span className="header-glow" aria-hidden="true" />
         <h1 className="name">Hyrum HG Wolf</h1>
@@ -57,8 +79,9 @@ export default function Sky() {
       <Constellation
         finePointer={finePointer}
         activeId={activeId}
+        activeSection={activeSection}
         onOpen={openStar}
-        onBackgroundClick={closePanel}
+        onBackgroundClick={closeAll}
       />
 
       <CometTrail finePointer={finePointer} reducedMotion={reducedMotion} />

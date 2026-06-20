@@ -95,10 +95,18 @@ export type Edge = readonly [string, string];
 /** Source-art coordinate space. The whole figure lives inside this box. */
 export const VIEWBOX = { w: 963, h: 806 } as const;
 
+// The exact line art from vector-87.svg, rendered verbatim (curves and all) so
+// the banner/flag matches the designer's drawing. EDGE_OFFSET shifts it from
+// vector-87's coordinate space into ellipse-270's (where the stars live).
+export const EDGE_PATH =
+  "${d}";
+export const EDGE_OFFSET = { x: ${OFF_X}, y: ${OFF_Y} } as const;
+
 export const NODES: FigureNode[] = [
 ${nodeLines}
 ];
 
+// Straight node-to-node skeleton (used only for the on-hover connection glow).
 export const EDGES: Edge[] = [
 ${wrapped.join("\n")}
 ];
