@@ -299,36 +299,28 @@ body {
 }
 .star.is-active .sparkle {
   display: block;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sparkle-in 0.35s ease;
-}
-@keyframes sparkle-in {
-  from {
-    opacity: 0;
-    transform: scale(0.4) rotate(-25deg);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) rotate(0);
-  }
 }
 
 #sky.is-dimmed .star:not(.is-active) {
   opacity: calc(var(--base-op, 1) * 0.4);
 }
 
-/* Legend filter: dim everything except the chosen category's stars. */
+/* Legend filter: dim everything hard, and make the chosen category's stars
+   blaze with a strong glow bloom. */
 #sky.is-filtered .edges-path {
-  opacity: 0.25;
+  opacity: 0.15;
 }
 #sky.is-filtered .star:not(.star--match) {
-  opacity: calc(var(--base-op, 1) * 0.2);
+  opacity: calc(var(--base-op, 1) * 0.12);
+}
+#sky.is-filtered .star--match {
+  filter: drop-shadow(0 0 4px rgba(165, 200, 255, 0.65))
+    drop-shadow(0 0 10px rgba(115, 170, 250, 0.4));
 }
 #sky.is-filtered .star--match .halo {
   animation: none;
   opacity: 1;
-  transform: scale(1.4);
+  transform: scale(1.7);
 }
 #sky.is-filtered .star--match .core {
   fill: var(--star-hot);
@@ -725,8 +717,5 @@ html.reduce-motion .panel {
   transition: none;
 }
 html.reduce-motion .legend-sub {
-  animation: none;
-}
-html.reduce-motion .star.is-active .sparkle {
   animation: none;
 }
